@@ -18,14 +18,9 @@ var controls;
 var RESOURCES_LOADED = false;
 var loadingManager;
 var models = {
-	// teste: {
-	// 	obj:"objects/spaceship/spaceShip.obj",
-    //     mtl:"objects/spaceship/spaceShip.mtl",
-	// 	mesh: null
-    // }
     teste: {
-        obj:"objects/testeCasa/testeCasa1.obj",
-        mtl:"objects/testeCasa/testeCasa1.mtl",
+        obj:"objects/modelo3DLeticia/Modelo26_1.obj",
+        mtl:"objects/modelo3DLeticia/Modelo26_1.mtl",
         mesh: null
     }
 };
@@ -53,14 +48,14 @@ function init_elements(){
 
     //linka o renderizador na div que representa nosso canvas
     var c = document.getElementById("divModelo3D");
-    c.appendChild(renderer.domElement);
+    if(c!=null)    c.appendChild(renderer.domElement);
 
     //---------------------------------------------------------------
     //Configura a camera
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     //Instancia uma nova cena
     scene = new THREE.Scene();
-    camera.position.set( 10, 10, 10 );
+    camera.position.set( 15, 10, 20 );
     //Adiciona a camera à cena
     scene.add(camera);
     //---------------------------------------------------------------
@@ -142,10 +137,10 @@ function init_elements(){
     controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     controls.dampingFactor = 0.5;
 
-    controls.screenSpacePanning = false;
+    controls.screenSpacePanning = true;
 
     controls.minDistance = 5;
-    controls.maxDistance = 50;
+    controls.maxDistance = 100;
 
     controls.maxPolarAngle = Math.PI / 2;
 }
@@ -188,7 +183,8 @@ function loadModels(){
                             //Define as características do modelo lido
 							node.castShadow = true;
                             node.receiveShadow = true;
-                            // node.scale.set(2,2,2);
+                            node.scale.set(1,1,1);
+                            node.position.set(0,-2,17);
 						}
                     });
                     //Armazena o mesh lido no array models, na posição key, indexando por mesh
@@ -211,7 +207,6 @@ function onResourcesLoaded(){
 function addModelsToScene(){
     var model = models.teste.mesh.clone();
     scene.add(model);
-    camera.lookAt(model.position);
     dirLight.target = model;
     
 }
