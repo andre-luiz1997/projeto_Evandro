@@ -1,0 +1,31 @@
+#
+## Alias OBJ Material File
+# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
+
+newmtl Wood_Cherry_Original
+Ka 0.000000 0.000000 0.000000
+Kd 0.592157 0.337255 0.160784
+Ks 0.330000 0.330000 0.330000
+map_Kd Modelo 26.1/Wood_Cherry_Original.jpg
+
+newmtl Color_B08
+Ka 0.000000 0.000000 0.000000
+Kd 0.498039 0.211765 0.086275
+Ks 0.330000 0.330000 0.330000
+
+newmtl Aluminum
+Ka 0.000000 0.000000 0.000000
+Kd 0.701961 0.701961 0.701961
+Ks 0.330000 0.330000 0.330000
+map_Kd Modelo 26.1/Aluminum.jpg
+
+newmtl FrontColor
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.330000 0.330000 0.330000
+
+newmtl _Burnt_Umber_1
+Ka 0.000000 0.000000 0.000000
+Kd 0.027451 0.011765 0.007843
+Ks 0.330000 0.330000 0.330000
+
