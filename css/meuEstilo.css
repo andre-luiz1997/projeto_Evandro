@@ -1,7 +1,51 @@
+#c {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: -1;
+}
+
 #divModelo3D {
-    background-color: black;
-    width: 800px;
-    height: 600px;
+    width: 500px;
+    height: 500px;   
     margin: auto;
     text-align: center;
+}
+
+.navbarStyle{
+    
+    background: rgb(2,0,36);
+    background: -moz-linear-gradient(309deg, rgba(2,0,36,1) 0%, rgba(2,13,53,1) 13%, rgba(2,21,63,1) 19%, rgba(1,55,107,1) 100%, rgba(0,212,255,1) 100%);
+    background: -webkit-linear-gradient(309deg, rgba(2,0,36,1) 0%, rgba(2,13,53,1) 13%, rgba(2,21,63,1) 19%, rgba(1,55,107,1) 100%, rgba(0,212,255,1) 100%);
+    background: linear-gradient(309deg, rgba(2,0,36,1) 0%, rgba(2,13,53,1) 13%, rgba(2,21,63,1) 19%, rgba(1,55,107,1) 100%, rgba(0,212,255,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#020024",endColorstr="#00d4ff",GradientType=1);
+    
+    overflow: hidden;
+}
+
+#body-wrapper { overflow: hidden; }
+
+@keyframes shadow-pulse
+{
+  0% {
+    box-shadow: 0 0 0 0px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 35px rgba(0, 0, 0, 0);
+  }
+}
+
+.btnPulse
+{
+  animation: shadow-pulse 1s infinite;
+}
+
+.flex-wrapper {
+  display: flex;
+  min-height: 60vh;
+  flex-direction: column;
+  justify-content: space-between
 }

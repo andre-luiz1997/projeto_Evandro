@@ -17,18 +17,14 @@ var controls;
 
 var RESOURCES_LOADED = false;
 var loadingManager;
-var models = {
-	// teste: {
-	// 	obj:"objects/spaceship/spaceShip.obj",
-    //     mtl:"objects/spaceship/spaceShip.mtl",
-	// 	mesh: null
-    // }
-    teste: {
-        obj:"objects/testeCasa/testeCasa1.obj",
-        mtl:"objects/testeCasa/testeCasa1.mtl",
-        mesh: null
-    }
-};
+// var models = {
+//     teste: {
+//         obj:"objects/modelo3DLeticia/Modelo26_1.obj",
+//         mtl:"objects/modelo3DLeticia/Modelo26_1.mtl",
+//         mesh: null
+//     }
+// };
+var models = [];
 
 // Meshes index
 var meshes = {};
@@ -37,13 +33,27 @@ var meshes = {};
 //-------------------------------FUNCOES----------------------------------
 
 //Chamada quando o body do documento é lido
-function setup()
+function setup(caminhoObj, caminhoMtl, divId)
 {
-  init_elements();
+    var model = {
+        obj: caminhoObj,
+        mtl: caminhoMtl,
+        mesh: null,
+    };
+    //Limpa o array de figuras
+    models.length = 0;
+    //Adiciona o modelo ao array de figuras
+    models.push(model);
+    WIDTH = $("#"+divId).width();
+    HEIGHT = $("#"+divId).height();
+    //---------------------------------------------------------------
+    //Lê os modelos 3D
+    loadModels();
+    init_elements(divId);
 }
 
 //Funcao que configura todos os elementos basicos para o three.js funcionar
-function init_elements(){
+function init_elements(divId){
     //---------------------------------------------------------------
     //Cria um renderizador WEBGL
     renderer = new THREE.WebGLRenderer();
@@ -52,20 +62,17 @@ function init_elements(){
     renderer.setSize(WIDTH, HEIGHT);
 
     //linka o renderizador na div que representa nosso canvas
-    var c = document.getElementById("divModelo3D");
-    c.appendChild(renderer.domElement);
-
+    var c = document.getElementById(divId);
+    if(c!=null)    c.appendChild(renderer.domElement);
+    console.log(c);
     //---------------------------------------------------------------
     //Configura a camera
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
     //Instancia uma nova cena
     scene = new THREE.Scene();
-    camera.position.set( 10, 10, 10 );
+    camera.position.set( 15, 10, 20 );
     //Adiciona a camera à cena
     scene.add(camera);
-    //---------------------------------------------------------------
-    //Lê os modelos 3D
-    loadModels();
     //---------------------------------------------------------------
     //Preparando o ambiente para receber o modelo 3D
     //Background da cena
@@ -142,10 +149,10 @@ function init_elements(){
     controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     controls.dampingFactor = 0.5;
 
-    controls.screenSpacePanning = false;
+    controls.screenSpacePanning = true;
 
     controls.minDistance = 5;
-    controls.maxDistance = 50;
+    controls.maxDistance = 100;
 
     controls.maxPolarAngle = Math.PI / 2;
 }
@@ -188,7 +195,8 @@ function loadModels(){
                             //Define as características do modelo lido
 							node.castShadow = true;
                             node.receiveShadow = true;
-                            // node.scale.set(2,2,2);
+                            node.scale.set(1,1,1);
+                            node.position.set(0,-2,17);
 						}
                     });
                     //Armazena o mesh lido no array models, na posição key, indexando por mesh
@@ -209,9 +217,24 @@ function onResourcesLoaded(){
 }
 
 function addModelsToScene(){
-    var model = models.teste.mesh.clone();
-    scene.add(model);
-    camera.lookAt(model.position);
-    dirLight.target = model;
-    
+    //Limpa a cena antes de inserir o novo modelo
+    for(let i = 0; i< scene.children.length ; i++){ 
+        if(scene.children[i].type == "Group"){
+            scene.remove(scene.children[i]); 
+        }
+    }
+
+    for(var i = 0; i<models.length; i++){
+        var model = models[i].mesh.clone();
+        scene.add(model);
+        
+        dirLight.target = model;
+    }
 }
+
+// function addModelsToScene(){
+//     var model = models.teste.mesh.clone();
+//     scene.add(model);
+//     dirLight.target = model;
+    
+// }
