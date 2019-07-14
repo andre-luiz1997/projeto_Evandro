@@ -3,12 +3,12 @@
 
     if($_REQUEST['operacao'] == 'cadastrarTbPublicacao'){   
         // INSERÇÃO DE UMA PUBLICAÇÃO
-        $texto = utf8_decode($_REQUEST['texto']);
+        $texto = utf8_decode(str_replace('\'', '"',$_REQUEST['texto']));
 
         //NA TABELA PUBLICAÇÃO
-        $sqlcomando = "INSERT INTO `tb_publicacao`(`cdPublicacao`,`cdSecao`, `cdCapitulo`, `texto`) VALUES (NULL,{$_REQUEST['cdSecao']},{$_REQUEST['cdCapitulo']},'{$texto}');";       
+        $sqlcomando = "INSERT INTO `tb_publicacao`(`cdPublicacao`,`cdSecao`, `cdCapitulo`, `texto`) VALUES (NULL,".$_REQUEST['cdSecao'].",".$_REQUEST['cdCapitulo'].",'".$texto."');";       
         $sqlprocesso = $conexao->query($sqlcomando); 
-        
+        echo utf8_encode($sqlcomando);
     }else if($_REQUEST['operacao'] == 'uploadFigura'){
         
         //FAZENDO UPLOAD DOS ARQUIVOS PARA O SERVIDOR
@@ -33,16 +33,16 @@
         if($_REQUEST['legendas']){
             for ($i=0; $i < count($_REQUEST['legendas']); $i++) { 
                 // INSERÇÃO NA TABELA DE FIGURA
-                $sqlcomando = "INSERT INTO `tb_figura`(`cdFigura`, `legenda`, `caminho`)VALUES (NULL,".utf8_encode($_REQUEST['legendas'][$i]).",'{$_REQUEST['listaArquivos'][$i]}');";
+                $sqlcomando = "INSERT INTO `tb_figura`(`cdFigura`, `legenda`, `caminho`)VALUES (NULL,'".utf8_encode($_REQUEST['legendas'][$i])."','{$_REQUEST['listaArquivos'][$i]}');";
                 $sqlprocesso = $conexao->query($sqlcomando);
-
-                // //SELEÇÃO DO ÚLTIMO REGISTRO INSERIDO(EM BUSCA DO CÓDIGO GERADO PARA ESTA ÚLTIMA FIGURA)
+                
+                //SELEÇÃO DO ÚLTIMO REGISTRO INSERIDO(EM BUSCA DO CÓDIGO GERADO PARA ESTA ÚLTIMA FIGURA)
                 $sqlcomando = "SELECT `cdFigura` FROM `tb_figura` ORDER BY `cdFigura` DESC LIMIT 1;"; 
                 $sqlprocesso = $conexao->query($sqlcomando);
                 $sqlprocesso = $sqlprocesso->fetch(PDO::FETCH_ASSOC);
                 $cdFigura = $sqlprocesso["cdFigura"];
                 
-                // //SELEÇÃO DA PUBLICACAO
+                //SELEÇÃO DA PUBLICACAO
                 $cdCapitulo = $_REQUEST['cdCapitulo'];
                 $cdSecao = $_REQUEST['cdSecao'];
                 $sqlcomando = "SELECT `cdPublicacao` FROM `tb_publicacao` WHERE `cdCapitulo`={$cdCapitulo} AND `cdSecao`={$cdSecao};"; 
@@ -50,7 +50,7 @@
                 $sqlprocesso = $sqlprocesso->fetch(PDO::FETCH_ASSOC);
                 $cdPublicacao = $sqlprocesso["cdPublicacao"];
                 
-                // // INSERÇÃO NA TABELA DE FIGURA_PUBLICACAO
+                // INSERÇÃO NA TABELA DE FIGURA_PUBLICACAO
                 $sqlcomando = "INSERT INTO `tb_figura_publicacao`(`cdFigura`, `cdPublicacao`) VALUES ({$cdFigura},{$cdPublicacao})";
                 $sqlprocesso = $conexao->query($sqlcomando);
                 
@@ -63,11 +63,14 @@
         $sqlcomando = "SELECT * FROM `tb_publicacao` WHERE cdCapitulo={$_REQUEST['cdCapitulo']} AND cdSecao={$_REQUEST['cdSecao']};";
         $sqlprocesso = $conexao->query($sqlcomando); 
         $sqlprocesso = $sqlprocesso->fetch(PDO::FETCH_ASSOC);
+        $array = array();
         if (empty($sqlprocesso)) { 
             echo "vazio";
         }else{
-            $array = array("cdCapitulo"=>$sqlprocesso["cdCapitulo"], "cdSecao"=>$sqlprocesso["cdSecao"], "texto"=>$sqlprocesso["texto"]);
-            echo json_encode($array, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); //Retorna o array com o capítulo pesquisado
+            // echo var_dump($sqlprocesso);
+            $array = array("cdCapitulo"=>$sqlprocesso["cdCapitulo"], "cdSecao"=>$sqlprocesso["cdSecao"], "texto"=>utf8_encode($sqlprocesso["texto"]));
+            // echo var_dump($array);
+            echo json_encode($array); //Retorna o array com a publicacao pesquisada
         }
     }else if($_REQUEST['operacao'] == 'editar'){
         //ALTERA O NOME DE UM CAPÍTULO NA TABELA CAPÍTULO, DADO UM cdCapitulo
@@ -90,7 +93,7 @@
         while ($linha = $sqlprocesso->fetch(PDO::FETCH_ASSOC)) {
             $objetos[] = array("cdCapitulo"=>$linha["cdCapitulo"], "nome"=>utf8_encode($linha["nome"]));
         }
-        echo json_encode($objetos, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo json_encode($objetos, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);      
 
     }else if($_REQUEST['operacao'] == 'pesquisarTbFigura_Publicacao'){
         $cdPublicacao = $_REQUEST['cdPublicacao'];
@@ -112,25 +115,48 @@
         $array = array("cdPublicacao"=>$sqlprocesso["cdPublicacao"]);
         echo json_encode($array, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }else if($_REQUEST['operacao'] == 'getFiguraArquivos'){
+        //-------------------------------------------------------
+        //Pegando o caminho já formatado do diretório no servidor
+        $path = dirname(__FILE__);
+        $path = substr($path, 0, strrpos($path, '\\')+1);
+        $path = str_replace('\\','/', $path);
+        //-------------------------------------------------------
+
+
         $cdFigura = $_REQUEST["cdFigura"];
         $sqlcomando = "SELECT * FROM `tb_figura` WHERE `cdFigura`={$cdFigura};";
         $sqlprocesso = $conexao->query($sqlcomando);
         $sqlprocesso = $sqlprocesso->fetch(PDO::FETCH_ASSOC);
         $array = array("cdFigura"=>$sqlprocesso["cdFigura"],"legenda"=>utf8_encode($sqlprocesso["legenda"]),"caminho"=>$sqlprocesso["caminho"]);
+        $fileName = $sqlprocesso["caminho"];
         $zip = new ZipArchive();
         $arrayNomesArquivos = array();
-        $caminho = '../uploads/'.$sqlprocesso["caminho"];
+        $caminho = $path.'uploads/'.$fileName;
+        //Cria uma nova pasta para receber os arquivos
+        $folderName = substr($fileName, 0, strrpos($fileName, '.'));
+        if(!is_dir($path.'objects/'.$folderName)){
+            mkdir($path.'objects/'.$folderName, 0777, true);
+        }        
+        $destino = $path.'objects/'.$folderName;
         
-        $zip = zip_open($caminho);
-        if($zip){
-            while($zip_entry = zip_read($zip)){
-                $file = basename(zip_entry_name($zip_entry));
-                array_push($arrayNomesArquivos, $file);
+        if($zip->open($caminho) == TRUE){ 
+            $zip->extractTo($destino); 
+                     
+            // while($zip_entry = zip_read($zip)){
+            //     $file = basename(zip_entry_name($zip_entry));
+            //     array_push($arrayNomesArquivos, $file);
+            // }
+
+            for ($i=0; $i < $zip->numFiles; $i++) { 
+                $fileName = basename($zip->getNameIndex($i));
+                array_push($arrayNomesArquivos, $fileName);
             }
             
         }
-        // echo var_dump($arrayNomesArquivos);
-        echo json_encode($arrayNomesArquivos, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); 
+        
+        // // echo var_dump($arrayNomesArquivos);
+        echo json_encode($arrayNomesArquivos, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);     
+        
 
     }else if($_REQUEST['operacao'] == 'pesquisarFigura'){
         $cdFigura = $_REQUEST["cdFigura"];

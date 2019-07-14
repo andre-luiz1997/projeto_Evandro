@@ -14,7 +14,7 @@
     $(document).ready(function(){
 
         //Buscando os dados para preencher o select de capítulo
-        $("#select-capitulo-secao").focus(function(){
+        $(function(){
             $.ajax({
                 type: 'post',
                 data: {

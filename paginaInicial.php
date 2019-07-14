@@ -1,6 +1,6 @@
 <script>
     $(document).ready(function(){
-        setup("objects/modelo3DLeticia/Modelo26_1.obj", "objects/modelo3DLeticia/Modelo26_1.mtl", 'divModelo3D');
+        setup('objects/MuroContraforte/MuroContraforte.dae','divModelo3D');
         
 
 

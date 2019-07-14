@@ -1,6 +1,5 @@
 //-------------------------------VARIAVEIS----------------------------------
-
-
+var box,center;
 //Capturando altura e largura da div onde serao lidos os modelos 3D
 var WIDTH = $('#divModelo3D').width();
 var HEIGHT = $('#divModelo3D').height();
@@ -16,39 +15,26 @@ var controls;
 
 
 var RESOURCES_LOADED = false;
-var loadingManager;
-// var models = {
-//     teste: {
-//         obj:"objects/modelo3DLeticia/Modelo26_1.obj",
-//         mtl:"objects/modelo3DLeticia/Modelo26_1.mtl",
-//         mesh: null
-//     }
-// };
+var loadingManager, loader;
 var models = [];
+
+var model;
 
 // Meshes index
 var meshes = {};
-
+var id = "";
 
 //-------------------------------FUNCOES----------------------------------
 
 //Chamada quando o body do documento é lido
-function setup(caminhoObj, caminhoMtl, divId)
+function setup(caminhoCollada, divId)
 {
-    var model = {
-        obj: caminhoObj,
-        mtl: caminhoMtl,
-        mesh: null,
-    };
-    //Limpa o array de figuras
-    models.length = 0;
-    //Adiciona o modelo ao array de figuras
-    models.push(model);
+    id = divId;
     WIDTH = $("#"+divId).width();
     HEIGHT = $("#"+divId).height();
     //---------------------------------------------------------------
     //Lê os modelos 3D
-    loadModels();
+    loadModels(caminhoCollada);
     init_elements(divId);
 }
 
@@ -57,14 +43,21 @@ function init_elements(divId){
     //---------------------------------------------------------------
     //Cria um renderizador WEBGL
     renderer = new THREE.WebGLRenderer();
-
+    
     // começa o renderizador
     renderer.setSize(WIDTH, HEIGHT);
+    renderer.gammaInput = true;
+    renderer.gammaOutput = true;
+    renderer.shadowMap.enabled = true;
 
     //linka o renderizador na div que representa nosso canvas
     var c = document.getElementById(divId);
+    
+    while (c.firstChild) {
+        c.removeChild(c.firstChild);
+    }
     if(c!=null)    c.appendChild(renderer.domElement);
-    console.log(c);
+    
     //---------------------------------------------------------------
     //Configura a camera
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
@@ -76,73 +69,52 @@ function init_elements(divId){
     //---------------------------------------------------------------
     //Preparando o ambiente para receber o modelo 3D
     //Background da cena
-    scene.background = new THREE.Color().setHSL( 0.6, 0, 1 );
-
-    var axesHelper = new THREE.AxesHelper( 500 );
-    scene.add( axesHelper );
+    scene.background = new THREE.Color( 0x8cb1ed );
 
     //Instancia uma fog(fumaça) na cena
-    scene.fog = new THREE.Fog( scene.background, 1, 5000 );
+    
+    // scene.fog = new THREE.Fog( 0xa0a0a0, 200, 1000 );
 
     //Instancia uma luz hemisférica na cena
-    hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.5);
-    hemiLight.color.setHSL( 0.6, 1, 0.6 );
-    hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
-    hemiLight.position.set( 0, 50, 0 );
+    // hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.5);
+    // hemiLight.position.set( 0, 200, 0 );
+    // scene.add( hemiLight );
+    //Instancia uma luz hemisférica na cena
+    hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffe3, 0.5);
+    // hemiLight.color.setHSL( 0.6, 1, 0.6 );
+    // hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+    hemiLight.position.set( 0, 200, 0 );
     scene.add( hemiLight );
 
     //Instancia uma luz direcional na cena
     dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-    dirLight.color.setHSL( 0.1, 1, 0.95 );
+    // dirLight.position.set( 0, 200, 200 );
     dirLight.position.set( - 1, 1.75, 1 );
     dirLight.position.multiplyScalar( 30 );
-    scene.add( dirLight );
-
     dirLight.castShadow = true;
 
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
-
-    var d = 50;
-
-    dirLight.shadow.camera.left = - d;
-    dirLight.shadow.camera.right = d;
-    dirLight.shadow.camera.top = d;
-    dirLight.shadow.camera.bottom = - d;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
 
     dirLight.shadow.camera.far = 3500;
     dirLight.shadow.bias = - 0.0001;
+   
+    dirLight.shadow.camera.top = 180;
+    dirLight.shadow.camera.bottom = - 100;
+    dirLight.shadow.camera.left = - 120;
+    dirLight.shadow.camera.right = 120;
+    scene.add( dirLight ); 
 
-    //Configurando o solo
-    var groundGeo = new THREE.PlaneBufferGeometry( 10000, 10000 );
-    var groundMat = new THREE.MeshPhongMaterial( { color: 0xffffff, specular: 0x050505 } );
-    groundMat.color.setHSL( 0.170, 0.81, 0.30 );
+    var mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 2000, 2000 ), new THREE.MeshBasicMaterial( { color: 0x6d8c51, depthWrite: false } ) );
+    mesh.rotation.x = - Math.PI / 2;
+    mesh.receiveShadow = false;
+    scene.add( mesh );
 
-    ground = new THREE.Mesh( groundGeo, groundMat );
-    ground.rotation.x = - Math.PI / 2;
-    ground.position.y = - 33;
-    scene.add( ground );
+    var grid = new THREE.GridHelper( 2000, 20, 0x000000, 0x000000 );
+    grid.material.opacity = 0.2;
+    grid.material.transparent = true;
+    scene.add( grid );
 
-    ground.receiveShadow = true;
-
-    //Configurando o domo do céu
-    var vertexShader = document.getElementById( 'vertexShader' ).textContent;
-    var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
-    var uniforms = {
-        topColor: { value: new THREE.Color( 0x0077ff ) },
-        bottomColor: { value: new THREE.Color( 0xffffff ) },
-        offset: { value: 33 },
-        exponent: { value: 0.6 }
-    };
-    uniforms.topColor.value.copy( hemiLight.color );
-
-    scene.fog.color.copy( uniforms.bottomColor.value );
-
-    var skyGeo = new THREE.SphereBufferGeometry( 4000, 32, 15 );
-    var skyMat = new THREE.ShaderMaterial( { vertexShader: vertexShader, fragmentShader: fragmentShader, uniforms: uniforms, side: THREE.BackSide } );
-
-    var sky = new THREE.Mesh( skyGeo, skyMat );
-    scene.add( sky );
     //---------------------------------------------------------------
     // Configurando os controles para o usuário movimentar a câmera
     controls = new THREE.MapControls( camera, renderer.domElement );
@@ -152,24 +124,41 @@ function init_elements(divId){
     controls.screenSpacePanning = true;
 
     controls.minDistance = 5;
-    controls.maxDistance = 100;
+    controls.maxDistance = 1000;
 
     controls.maxPolarAngle = Math.PI / 2;
+
+    window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function onWindowResize() {
+    WIDTH = $("#"+id).width();
+    HEIGHT = $("#"+id).height();
+    camera.aspect = WIDTH / HEIGHT;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( WIDTH, HEIGHT );
+
 }
 
 //Loop recursivo para renderizar a cena
 function draw(){
+    controls.update();
     if(RESOURCES_LOADED){
         requestAnimationFrame(draw);//Fazendo um loop recursivo
         renderer.render(scene, camera);//Renderizando a cena
+        
     }
 }
 
+
 //Função que lê os modelos 3D indicados pelas chaves do array models
-function loadModels(){
-    loadingManager = new THREE.LoadingManager();
+function loadModels(caminhoCollada){
+    loadingManager = new THREE.LoadingManager(function(){
+        scene.add(model);
+    });
 	loadingManager.onProgress = function(item, loaded, total){
-		// console.log(item, loaded, total);
+		console.log(item, loaded, total);
 	};
 	loadingManager.onLoad = function(){
 		// console.log("loaded all resources");
@@ -177,36 +166,21 @@ function loadModels(){
         onResourcesLoaded();
     };
 
-    //Percorre o array models e para cada elemento lê o modelo 3D correspondente
-    for( var _key in models ){
-		(function(key){
-			
-			var mtlLoader = new THREE.MTLLoader(loadingManager);
-			mtlLoader.load(models[key].mtl, function(materials){
-				materials.preload();
-				
-				var objLoader = new THREE.OBJLoader(loadingManager);
-				
-				objLoader.setMaterials(materials);
-				objLoader.load(models[key].obj, function(mesh){
-					
-					mesh.traverse(function(node){
-						if( node instanceof THREE.Mesh ){
-                            //Define as características do modelo lido
-							node.castShadow = true;
-                            node.receiveShadow = true;
-                            node.scale.set(1,1,1);
-                            node.position.set(0,-2,17);
-						}
-                    });
-                    //Armazena o mesh lido no array models, na posição key, indexando por mesh
-					models[key].mesh = mesh;
-					
-				});
-			});
-			
-    })(_key);
-  }
+    loader = new THREE.ColladaLoader(loadingManager);
+    loader.load(caminhoCollada, function(collada){
+        model = collada.scene;
+        model.scale.set(1,1,1);
+        // model.position.set(0,0,0);
+        model.castShadow = true;
+        model.receiveShadow = true;
+
+        
+        box = new THREE.Box3().setFromObject( model );
+        center = new THREE.Vector3();
+        box.getCenter( center );
+        model.position.sub( center ); // center the model
+        model.position.y=0;
+    });
 }
 
 //Função que é chamada quando todos os objetos 3D são lidos
@@ -223,18 +197,27 @@ function addModelsToScene(){
             scene.remove(scene.children[i]); 
         }
     }
+    scene.add(model);
 
-    for(var i = 0; i<models.length; i++){
-        var model = models[i].mesh.clone();
-        scene.add(model);
-        
-        dirLight.target = model;
-    }
+    var maxDim = Math.min(box.getSize().x,box.getSize().y,box.getSize().z);
+    var aspectRatio = model.width / model.height;    
+    // Convert camera fov degrees to radians
+    var fov = camera.fov * ( Math.PI / 180 );     
+    var distance = maxDim / 2 / Math.tan(Math.PI * fov / 360);
+    var cameraPosition = new THREE.Vector3(
+        0,
+        model.position.y + Math.abs( distance / Math.sin( fov / 2 ) ),
+        100000
+      );
+    camera.position.copy(cameraPosition);
+    camera.updateProjectionMatrix();
+    camera.lookAt(model.position);
+    
+    dirLight.position.copy(camera.position);
+    dirLight.target = model;
+    console.debug(box.max);
+    
+    
 }
 
-// function addModelsToScene(){
-//     var model = models.teste.mesh.clone();
-//     scene.add(model);
-//     dirLight.target = model;
-    
-// }
+

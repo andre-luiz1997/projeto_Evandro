@@ -88,9 +88,9 @@ crossorigin="anonymous"></script>
                 $('[data-toggle="tooltip"]').tooltip();
             });           
 
-
+            setup('objects/MuroContraforte/MuroContraforte.dae','divModelo3D');   
         });
-            
+         
 
         
     </script>
@@ -99,14 +99,31 @@ crossorigin="anonymous"></script>
     
 
 </head>
-<body onload="setup();">
+<body>
     <div class="row">
         <div class="col s12">
             <?php
                 require_once("navbar.php");
                 if($conteudo == 'dashboard'){
+                    ?>
+                    <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='index.php'">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Área Restrita</li>
+                    </ol>
+                    </nav>
+                    <?php
                     require_once('dashboardAdmin.php');
                 }else if($conteudo == 'novaPublicacao')  {
+                    ?>
+                    <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='index.php'">Home</a></li>
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='?conteudo=dashboard'">Área Restrita</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Nova Publicação</li>
+                    </ol>
+                    </nav>
+                    <?php
                     echo "
                         <section id='crudPublicacao'>
                             <div class='container'>
@@ -116,6 +133,16 @@ crossorigin="anonymous"></script>
                             </div>
                         </section>";
                 }else if($conteudo == 'novoCapitulo'){
+                    ?>
+                    <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='index.php'">Home</a></li>
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='?conteudo=dashboard'">Área Restrita</a></li>
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='?conteudo=novaPublicacao'">Nova Publicação</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Novo Capítulo</li>
+                    </ol>
+                    </nav>
+                    <?php
                     echo "
                         <section id='crudCapitulo'>
                             <div class='container'>
@@ -125,6 +152,16 @@ crossorigin="anonymous"></script>
                             </div>
                         </section>";
                 }else if($conteudo == 'novaSecao'){
+                    ?>
+                    <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='index.php'">Home</a></li>
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='?conteudo=dashboard'">Área Restrita</a></li>
+                        <li class="breadcrumb-item"><a href="#" onclick="location.href='?conteudo=novaPublicacao'">Nova Publicação</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Nova Seção</li>
+                    </ol>
+                    </nav>
+                    <?php
                     echo "
                         <section id='crudSecao'>
                             <div class='container'>
@@ -147,6 +184,7 @@ crossorigin="anonymous"></script>
     
     <script src="js/MTLLoader.js"></script>
     <script src="js/OBJLoader.js"></script>
+    <script src="js/ColladaLoader.js"></script>
     <script src="js/MapControls.js"></script>
     <!--O ARQUIVO main.js CONTÉM TODA A CODIFICAÇÃO EM THREE.JS PARA O FUNCIONAMENTO DA VISUALIZAÇÃO 3D-->
     <script src="js/main.js"></script>

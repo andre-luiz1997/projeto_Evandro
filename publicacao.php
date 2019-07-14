@@ -40,14 +40,13 @@
 <script type="text/javascript">
     $(document).ready(function(){
     var cdPublicacao, cdCapitulo, cdSecao, cdFigura;
-        var caminhoMtl, caminhoObj;
+        var caminhoMtl, caminhoObj, caminhoCollada;
         var titulo = "";
         var conteudo = "";
         var legenda = "";
-        carregaCapitulo();
 
         //Buscando os dados para preencher o select de capítulo
-        function carregaCapitulo(){
+        $(function(){
             $.ajax({
                 type: 'post',
                 data: {
@@ -66,7 +65,7 @@
                     }
                 }
             })
-        }
+        });
         
         function isEmpty(obj) {
             for(var key in obj) {
@@ -90,7 +89,7 @@
                 success: function(retorno){
                     //O retorno é um array com os objetos de Secao Pesquisados
                     var options = "<option disabled selected>Selecione uma seção</option>";
-                    if(!isEmpty(retorno)){
+                    if(!isEmpty(retorno) || retorno.length > 0){
                         var retorno = JSON.parse(retorno);
                         for (var i = 0; i < retorno.length; i++) {
                             options += '<option value="' + retorno[i].cdSecao + '">' + 'Seção '+retorno[i].cdSecao +': '+retorno[i].nome + '</option>';
@@ -106,6 +105,8 @@
             });
         });
 
+
+        //Ao selecionar um capítulo & uma seção, então montar a publicação
         $("#select-secao").on('change', function(){
             var sucess = false;
             titulo = "";
@@ -133,7 +134,7 @@
             });
             //--------------------------------------------------
             //Montar a publicação na página para o usuário
-
+            //--------------------------------------------------
             //Pegando o nome do Capítulo Selecionado
             $.ajax({
                 type: 'post',
@@ -152,6 +153,10 @@
             div.className = "row";
             div.innerHTML = titulo;
             document.getElementById('divConteudo').appendChild(div);
+            //-----------------------------------------------------------------------------
+
+            //-----------------------------------------------------------------------------
+            //Pegando o nome da Seção Selecionada
             $.ajax({
                 type: 'post',
                 data: {
@@ -159,7 +164,7 @@
                     cdSecao: cdSecao,
                     operacao: 'pesquisar'
                 },
-                url: 'ajax/ajaxCapitulo.php',
+                url: 'ajax/ajaxSecao.php',
                 success: function(retorno){
                     var retorno = JSON.parse(retorno);
                     titulo = "<h3> Seção "+ cdCapitulo+"."+cdSecao+": "+retorno.nome+"</h3>";
@@ -170,7 +175,10 @@
             div.className = "row";
             div.innerHTML = titulo;
             document.getElementById('divConteudo').appendChild(div);
+            //-----------------------------------------------------------------------------
 
+            //-----------------------------------------------------------------------------
+            //Pegando o texto cadastrado da publicação e adicionando ao conteúdo do site
             $.ajax({
                 type: 'post',
                 dataType: 'html',
@@ -192,11 +200,11 @@
             div.className = "row";
             div.innerHTML = conteudo;
             document.getElementById('divConteudo').appendChild(div);
-
-            //--------------------------------------------------
-            //Mostra as figuras disponíveis para o usuário selecioná-las
-            show('linhaSelectFigura');
+            //-----------------------------------------------------------------------------
             show('conteudoRow');
+            //-----------------------------------------------------------------------------
+            //Mostra as figuras disponíveis para o usuário selecioná-las
+            $('#select-figura').html("<option disabled selected>Selecione uma figura</option>");
             var cdFigura;
             $.ajax({
                 type: 'post',
@@ -209,8 +217,8 @@
                     //O retorno é um array com os objetos de Secao Pesquisados
                     var options = "<option disabled selected>Selecione uma figura</option>";
                     
-                    if(!isEmpty(retorno)){
-                        var retorno = JSON.parse(retorno);
+                    var retorno = JSON.parse(retorno);
+                    if(!isEmpty(retorno)){  
                         cdFigura = retorno[0].cdFigura;
                         for (var i = 0; i < retorno.length; i++) {
                             var legenda = retorno[i].legenda;
@@ -218,33 +226,41 @@
                             options += '<option value="' + retorno[i].cdFigura + '">' + 'Figura '+(i+1)+': '+ legenda + '</option>';
                             
                         }
-                        
-                    }else{
-                        options = '<option disabled selected>Não há figura cadastrada nesta seção!</option>';
-                    }
-                    
-                    $('#select-figura').html(options);
-                },
-                async: false
-            });
-            $.ajax({
-                type: 'post',
-                data:{
-                    cdFigura: cdFigura,
-                    operacao: 'pesquisarFigura'
-                },
-                url: 'ajax/ajaxPublicacao.php',
-                success: function(retorno){
-                    var retorno = JSON.parse(retorno);
-                    legenda = retorno.legenda;                    
-                },
-                async: false
-            });
-            
-            document.getElementById("legendaFigura").innerHTML = legenda;
+                        $('#select-figura').html(options);
+                        $('#select-figura').prop('disabled', false);
+                        show('linhaSelectFigura');
+                        showBlock('figura3D');
+                        //-----------------------------------------------------------------------------
 
-            loadFigura(cdFigura);
-            
+                        //-----------------------------------------------------------------------------
+                        $.ajax({
+                            type: 'post',
+                            data:{
+                                cdFigura: cdFigura,
+                                operacao: 'pesquisarFigura'
+                            },
+                            url: 'ajax/ajaxPublicacao.php',
+                            success: function(retorno){
+                                var retorno = JSON.parse(retorno);
+                                
+                                if(!isEmpty(retorno)){
+                                    legenda = retorno.legenda;     
+                                }
+                            },
+                            async: false
+                        });
+                        
+                        document.getElementById("legendaFigura").innerHTML = legenda;
+                        loadFigura(cdFigura);
+
+                    }else{
+                        hide('figura3D');
+                        hide('linhaSelectFigura');
+                    }                 
+                    
+                }
+            });
+           
                
         });
 
@@ -257,9 +273,14 @@
                 },
                 url: 'ajax/ajaxPublicacao.php',
                 success: function(retorno){
+                    //O retorno desta consulta é um array com os nomes de todos os arquivos necessários para a figura 3D
+                    console.debug(retorno);
                     var retorno = JSON.parse(retorno);
+                    
                     var nomePasta = retorno.shift();
+                    
                     for (let index = 0; index < retorno.length; index++) {
+                        
                         const element = retorno[index];
                         //Pegando a extensão do arquivo
                         const extensaoArquivo = element.replace(/^.*\./, '');
@@ -268,13 +289,16 @@
                         if(extensaoArquivo == 'mtl') caminhoMtl = 'objects/'+nomePasta+'/'+element;
                         //VERIFICA SE POSSUI UM OBJ NO ARQUIVO
                         if(extensaoArquivo == 'obj') caminhoObj = 'objects/'+nomePasta+'/'+element;
+                        // VERIFICA SE POSSUI UM .DAE NO ARQUIVO(COLLADA)
+                        if(extensaoArquivo == 'dae') caminhoCollada = 'objects/'+nomePasta+'/'+element;
                         success =  true;
                     }
-                    
+                    console.debug(caminhoCollada);
                 },
                 async: false
             });
-            setup(caminhoObj, caminhoMtl, "divModelo3DPublicacao");
+            
+            setup(caminhoCollada, 'divModelo3D');
         }
 
 
@@ -359,8 +383,8 @@
 </br>
 <div class="row" style="display: none;" id="conteudoRow">
     <div class="col-lg  d-flex justify-content-center">
-        <figure class="figure">
-            <div id="divModelo3DPublicacao" style="visibility:visible; width: 500px; height: 500px; margin: auto; text-align: center;" class="img-thumbnail img-fluid"></div>
+        <figure class="figure" id="figura3D">
+            <div id="divModelo3D" style="visibility:visible; width: 500px; height: 500px; margin: auto; text-align: center;" class="img-thumbnail img-fluid"></div>
             <figcaption class="figure-caption" id="legendaFigura"></figcaption>
         </figure>
     </div>

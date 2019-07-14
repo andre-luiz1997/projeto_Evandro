@@ -88,14 +88,28 @@ crossorigin="anonymous"></script>
     <?php
         require("navbar.php");
     ?>
-        <br>
-        <div class="flex-wrapper">
-            <div class="container">
+                
     <?php
+        
         if(ISSET($_REQUEST['acao']) && $_REQUEST['acao'] == 'conteudos'){
-                require("publicacao.php");
+            ?>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#" onclick="location.href='index.php'">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Conteúdos</li>
+                </ol>
+            </nav>
+            <div class="flex-wrapper">
+            <div class="container">
+            <?php
+            require("publicacao.php");
         }else{
-                require("paginaInicial.php");
+            ?>
+            <br>
+            <div class="flex-wrapper">
+            <div class="container">
+            <?php
+            require("paginaInicial.php");
         }       
     ?>
             </div>
@@ -110,6 +124,7 @@ crossorigin="anonymous"></script>
         
     
     <script src="js/MTLLoader.js"></script>
+    <script src="js/ColladaLoader.js"></script>
     <script src="js/OBJLoader.js"></script>
     <script src="js/MapControls.js"></script>
     <!--O ARQUIVO main.js CONTÉM TODA A CODIFICAÇÃO EM THREE.JS PARA O FUNCIONAMENTO DA VISUALIZAÇÃO 3D-->

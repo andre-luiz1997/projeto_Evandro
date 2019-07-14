@@ -57,13 +57,14 @@
                 theme: 'snow'
             };
         var editor = new Quill('#editor', options); 
-            
 
         $("#btn_cadastrar_publicacao").click( function(){
             var cdCapitulo = $("#select-capitulo").val();
             var cdSecao = $("#select-secao").val();
             var texto = editor.container.firstChild.innerHTML; //Pegando o texto digitado em HTML
             var legendas = new Array(); //Lista com as legendas dos arquivos
+            //-------------------------------------------------------------------
+            //INSERINDO UMA NOVA PUBLICAÇÃO NA TABELA
             $.ajax({
                 type: 'post',
                 data: {
@@ -74,67 +75,67 @@
                 },
                 url: 'ajax/ajaxPublicacao.php',
                 success: function(retorno){
-                    // alert(retorno);
+                    console.debug(retorno);
+                    //-------------------------------------------------------------------
+                    fileInput = $('#inputArquivo'); //Pega os dados do formulário
+
+                    for (let index = 0; index < fileInput.get(0).files.length; index++) {
+                        const id = "#legendaArquivo"+index;
+                        const legenda = $(id).val();
+                        
+                        legendas.push(legenda);
+                    }
+
+                    var form_data = new FormData();
+
+                    var ins = document.getElementById("inputArquivo").files.length;
+
+                    for (var x = 0; x < ins; x++) {
+                        form_data.append("inputArquivo[]", document.getElementById('inputArquivo').files[x]);
+                    }
+
+                    //Enviando os arquivos e legendas para o servidor
+                    $.ajax({
+                        url: 'ajax/ajaxPublicacao.php?operacao=uploadFigura', // point to server-side PHP script 
+                        dataType: 'text', // what to expect back from the PHP script
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                        data: form_data,
+                        type: 'post',
+                        success: function (retorno) {
+                            // alert(retorno);
+                            //Cadastrando as figuras no banco de dados
+                            $.ajax({
+                                url: 'ajax/ajaxPublicacao.php?operacao=cadastrarTbFigura',
+                                data: {
+                                    legendas: legendas,
+                                    cdCapitulo: cdCapitulo,
+                                    cdSecao: cdSecao,
+                                    listaArquivos: listaArquivos
+                                },
+                                type: "POST",
+                                success: function(retorno){
+                                    //Se o código chegou aqui:
+                                    //A PUBLICAÇÃO FOI CADASTRADA EM TB_PUBLICACAO
+                                    //OS ARQUIVOS FORAM UPADOS PARA O SERVIDOR
+                                    //AS FIGURAS FORAM LINKADAS COM A DEVIDA PUBLICACAO
+                                    $('#modalSucessoPublicacao').modal({backdrop: 'static', keyboard: false});
+                                    //Não é possível fechar o modal clicando do lado de fora, para forçar a seleção por botões
+                                }
+                            });
+                        },
+                        error: function (retorno) {
+                            // alert(retorno);               
+                        }
+                    });
                 }
             });
-
-            fileInput = $('#inputArquivo'); //Pega os dados do formulário
-
-            for (let index = 0; index < fileInput.get(0).files.length; index++) {
-                const id = "#legendaArquivo"+index;
-                const legenda = $(id).val();
-                
-                legendas.push(legenda);
-            }
             
-            var form_data = new FormData();
-            
-            var ins = document.getElementById("inputArquivo").files.length;
-            
-            for (var x = 0; x < ins; x++) {
-                form_data.append("inputArquivo[]", document.getElementById('inputArquivo').files[x]);
-            }
-
-            //Enviando os arquivos e legendas para o servidor
-            $.ajax({
-                url: 'ajax/ajaxPublicacao.php?operacao=uploadFigura', // point to server-side PHP script 
-                dataType: 'text', // what to expect back from the PHP script
-                cache: false,
-                contentType: false,
-                processData: false,
-                data: form_data,
-                type: 'post',
-                success: function (retorno) {
-                    // alert(retorno);
-                },
-                error: function (retorno) {
-                    // alert(retorno);               
-                }
-            });
-            
-            //Cadastrando as figuras no banco de dados
-            $.ajax({
-                url: 'ajax/ajaxPublicacao.php?operacao=cadastrarTbFigura',
-                data: {
-                    legendas: legendas,
-                    cdCapitulo: cdCapitulo,
-                    cdSecao: cdSecao,
-                    listaArquivos: listaArquivos
-                },
-                type: "POST",
-                success: function(retorno){
-                    //Se o código chegou aqui:
-                    //A PUBLICAÇÃO FOI CADASTRADA EM TB_PUBLICACAO
-                    //OS ARQUIVOS FORAM UPADOS PARA O SERVIDOR
-                    //AS FIGURAS FORAM LINKADAS COM A DEVIDA PUBLICACAO
-                    $('#modalSucessoPublicacao').modal('show', 'focus');
-                }
-            });
-
         });
 
         //Buscando os dados para preencher o select de capítulo
-        $("#select-capitulo").focus(function(){
+        $(function(){
             $.ajax({
                 type: 'post',
                 data: {
@@ -198,14 +199,13 @@
                 data:{
                     cdCapitulo: capituloSelecionado,
                     cdSecao: secaoSelecionada,
-                    operacao: 'pesquisar',
-                    dataType: 'html'
+                    operacao: 'pesquisar'
                 },
                 url: 'ajax/ajaxPublicacao.php',
                 success: function(retorno){
                     //O retorno é um array com os objetos de Publicacao pesquisados
-                    
                     if(isJson(retorno)){
+                        
                         //Já existe uma publicação cadastrada para esta seção/capítulo
                         //Não é possível cadastrar mais publicações para esta escolha!!
                         texto = 'Já existe uma publicação cadastrada para o <br> <b>'+ nomeCapitulo+'</b>, <br> <b>'+ nomeSecao+'</b>!';
@@ -302,7 +302,19 @@
             }
         });
 
-        
+        $("#btn-sucesso-nova-publicacao").click(function(){
+            // $('#publicacaoForm').trigger("reset");
+
+            //Fechar o modal de sucesso da publicação
+            $('#modalSucessoPublicacao').modal('hide');
+            //Refresh na página
+            location.reload();
+            //Focar no primeiro elemento do formulário
+            $('#select-capitulo').focus();
+            //Desativa o select de seção
+            $("#select-secao").html('<option disabled selected>Selecione uma seção</option>');
+            $("#select-secao").prop('disabled', true);
+        });
 
         
     });
@@ -316,7 +328,7 @@
 <div class="card">
     <h5 class="card-header text-center">Cadastrar nova publicação</h5>
     <div class="card-body">
-        <form method="POST" id="textosForm">
+        <form method="POST" id="publicacaoForm">
             <label for="capitulo-row"><b>Capítulo</b></label>
             <div class="form-row" id="capitulo-row">
                 <div class="col-md-7">
@@ -369,7 +381,7 @@
                     </div>                
                 </div>
             </div>
-
+            <br>
             <div id="cardListaDeArquivos" class="card" style="visibility: hidden;">
                 <div class="card-header text-center text-white bg-info">
                     Arquivos Selecionados
@@ -408,8 +420,8 @@
         <p>Publicação Cadastrada com sucesso!</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-        <button type="button" class="btn btn-success">Cadastrar nova Publicação</button>
+        <button type="button" id="btn-sucesso-dismiss" class="btn btn-secondary" data-dismiss="modal">Finalizar</button>
+        <button type="button" id="btn-sucesso-nova-publicacao" class="btn btn-success">Cadastrar outra Publicação</button>
       </div>
     </div>
   </div>
